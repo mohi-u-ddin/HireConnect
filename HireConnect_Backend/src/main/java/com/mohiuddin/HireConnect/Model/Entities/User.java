@@ -1,20 +1,23 @@
 package com.mohiuddin.HireConnect.Model.Entities;
 
+import com.mohiuddin.HireConnect.Model.Enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import javax.management.relation.Role;
-import java.lang.reflect.Type;
-import java.security.PrivateKey;
-import java.security.Timestamp;
+import java.time.LocalDateTime;
 
-@Entity(name = "User")
+
+@Entity
+@Table(name = "users")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,6 +31,7 @@ public class User {
     @Column(nullable = false, length = 255)
     private String password;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;
 
@@ -37,8 +41,8 @@ public class User {
     @Column(length = 100)
     private String location;
 
-    @Column(length = 255)
-    private String profileimage;
+    @Column(name = "profile_image", length = 255)
+    private String profileImage;
 
     @Column(length = 150)
     private String headline;
@@ -46,16 +50,18 @@ public class User {
     @Column(columnDefinition = "TEXT")
     private String about;
 
-    @Column(length = 255)
-    private String resumeurl;
+    @Column(name = "resume_url", length = 255)
+    private String resumeUrl;
 
+    @Builder.Default
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
-    private boolean enabled;
+    private boolean enabled = true;
 
-    @Column(name = "created_at", nullable = false)
-    private Timestamp createdAt;
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
+    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private Timestamp updatedAt;
-
+    private LocalDateTime updatedAt;
 }
