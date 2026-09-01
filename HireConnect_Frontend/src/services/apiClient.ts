@@ -30,7 +30,7 @@ export class ApiError extends Error {
 }
 
 function getAuthToken(): string | null {
-  return localStorage.getItem('hireflow_token');
+  return localStorage.getItem('hireconnect_token');
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {

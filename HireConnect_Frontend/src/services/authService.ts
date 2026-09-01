@@ -5,8 +5,8 @@ import { simulateLatency, ApiError } from './apiClient';
 // In-memory mutable copy so registrations persist for the session.
 const users: User[] = [...mockUsers];
 
-const TOKEN_KEY = 'hireflow_token';
-const USER_KEY = 'hireflow_user';
+const TOKEN_KEY = 'hireconnect_token';
+const USER_KEY = 'hireconnect_user';
 
 function issueMockToken(user: User): string {
   // NOT a real JWT. This is only a placeholder so the rest of the app can

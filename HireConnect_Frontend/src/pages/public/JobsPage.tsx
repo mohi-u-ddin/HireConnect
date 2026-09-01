@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SlidersHorizontal, X } from 'lucide-react';
 import type { Job, JobFilters } from '../../types';
@@ -37,16 +37,19 @@ export function JobsPage() {
   const { isAuthenticated, currentUser, role } = useAuth();
   const { showToast } = useToast();
 
-  const filters: JobFilters = {
-    keyword: searchParams.get('keyword') ?? undefined,
-    location: searchParams.get('location') ?? undefined,
-    category: searchParams.get('category') ? [searchParams.get('category')!] : undefined,
-    sort: (searchParams.get('sort') as JobFilters['sort']) ?? 'relevant',
-    page: Number(searchParams.get('page') ?? 1),
-    pageSize: 9,
-  };
+  const filters: JobFilters = useMemo(
+    () => ({
+      keyword: searchParams.get('keyword') ?? undefined,
+      location: searchParams.get('location') ?? undefined,
+      category: searchParams.get('category') ? [searchParams.get('category')!] : undefined,
+      sort: (searchParams.get('sort') as JobFilters['sort']) ?? 'relevant',
+      page: Number(searchParams.get('page') ?? 1),
+      pageSize: 9,
+    }),
+    [searchParams]
+  );
 
-  const load = () => {
+  const load = useCallback(() => {
     setStatus('loading');
     jobService
       .getJobs(filters)
@@ -57,9 +60,11 @@ export function JobsPage() {
         setStatus('success');
       })
       .catch(() => setStatus('error'));
-  };
+  }, [filters]);
 
-  useEffect(load, [searchParams]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   useEffect(() => {
     if (isAuthenticated && role === 'JOB_SEEKER' && currentUser) {

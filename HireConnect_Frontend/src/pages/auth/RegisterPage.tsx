@@ -54,7 +54,7 @@ export function RegisterPage() {
     setIsLoading(true);
     try {
       const user = await register({ fullName, email, password, role: accountType });
-      showToast('Account created successfully. Welcome to HireFlow!', 'success');
+      showToast('Account created successfully. Welcome to HireConnect!', 'success');
       navigate(dashboardPathByRole[user.role], { replace: true });
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Something went wrong. Please try again.';
@@ -71,7 +71,7 @@ export function RegisterPage() {
           <Logo className="mb-8" />
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Create your account</h1>
           <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
-            Start your journey with HireFlow today.
+            Start your journey with HireConnect today.
           </p>
 
           {errors.form && (
@@ -214,7 +214,7 @@ export function RegisterPage() {
         <div className="relative max-w-md text-white">
           <h2 className="text-3xl font-bold text-balance">Build your next great team.</h2>
           <p className="mt-4 text-indigo-100">
-            Whether you&apos;re hiring or looking to be hired, HireFlow gets you there faster.
+            Whether you&apos;re hiring or looking to be hired, HireConnect gets you there faster.
           </p>
         </div>
       </div>

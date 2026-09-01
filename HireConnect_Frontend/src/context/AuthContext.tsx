@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateCurrentUser = (user: User) => {
     setCurrentUser(user);
-    localStorage.setItem('hireflow_user', JSON.stringify(user));
+    localStorage.setItem('hireconnect_user', JSON.stringify(user));
   };
 
   return (

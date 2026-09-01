@@ -6,7 +6,7 @@ export const mockUsers: User[] = [
   {
     id: 'u1',
     fullName: 'Alex Morgan',
-    email: 'seeker@hireflow.com',
+    email: 'seeker@hireconnect.com',
     role: 'JOB_SEEKER',
     status: 'ACTIVE',
     phone: '+92 300 1234567',
@@ -50,7 +50,7 @@ export const mockUsers: User[] = [
   {
     id: 'u2',
     fullName: 'Sana Khalid',
-    email: 'employer@hireflow.com',
+    email: 'employer@hireconnect.com',
     role: 'EMPLOYER',
     status: 'ACTIVE',
     phone: '+92 301 9988776',
@@ -61,7 +61,7 @@ export const mockUsers: User[] = [
   {
     id: 'u3',
     fullName: 'Bilal Ahmed',
-    email: 'employer2@hireflow.com',
+    email: 'employer2@hireconnect.com',
     role: 'EMPLOYER',
     status: 'ACTIVE',
     location: 'Lahore, Pakistan',
@@ -71,7 +71,7 @@ export const mockUsers: User[] = [
   {
     id: 'u4',
     fullName: 'Admin User',
-    email: 'admin@hireflow.com',
+    email: 'admin@hireconnect.com',
     role: 'ADMIN',
     status: 'ACTIVE',
     location: 'Islamabad, Pakistan',
@@ -122,7 +122,7 @@ export const mockUsers: User[] = [
 ];
 
 export const DEMO_ACCOUNTS = [
-  { role: 'JOB_SEEKER' as const, email: 'seeker@hireflow.com', password: 'password123', label: 'Job Seeker' },
-  { role: 'EMPLOYER' as const, email: 'employer@hireflow.com', password: 'password123', label: 'Employer' },
-  { role: 'ADMIN' as const, email: 'admin@hireflow.com', password: 'password123', label: 'Admin' },
+  { role: 'JOB_SEEKER' as const, email: 'seeker@hireconnect.com', password: 'password123', label: 'Job Seeker' },
+  { role: 'EMPLOYER' as const, email: 'employer@hireconnect.com', password: 'password123', label: 'Employer' },
+  { role: 'ADMIN' as const, email: 'admin@hireconnect.com', password: 'password123', label: 'Admin' },
 ];

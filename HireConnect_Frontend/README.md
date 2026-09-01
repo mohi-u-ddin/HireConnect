@@ -1,4 +1,4 @@
-# HireFlow — Modern Job Portal Frontend
+# HireConnect — Modern Job Portal Frontend
 
 A production-quality frontend for a job recruitment platform, built with React, TypeScript, Vite, and Tailwind CSS. Designed to be connected to a Spring Boot + PostgreSQL + JWT backend later without redesigning the UI.
 
@@ -30,9 +30,9 @@ npm run preview
 
 | Role       | Email                  | Password    |
 |------------|-------------------------|-------------|
-| Job Seeker | seeker@hireflow.com     | password123 |
-| Employer   | employer@hireflow.com   | password123 |
-| Admin      | admin@hireflow.com      | password123 |
+| Job Seeker | seeker@hireconnect.com   | password123 |
+| Employer   | employer@hireconnect.com | password123 |
+| Admin      | admin@hireconnect.com    | password123 |
 
 These are also available as one-click autofill buttons on the login page.
 
