@@ -34,6 +34,12 @@ A comprehensive technical blueprint for the HireConnect backend: entities, DTOs,
   - [9.5 Job Application DTOs](#95-job-application-dtos)
   - [9.6 Common & Response Envelope DTOs](#96-common--response-envelope-dtos)
 - [10. Service Layer Design](#10-service-layer-design)
+  - [10.1 AuthService](#101-authservice)
+  - [10.2 UserService](#102-userservice)
+  - [10.3 CompanyService](#103-companyservice)
+  - [10.4 JobService](#104-jobservice)
+  - [10.5 JobApplicationService](#105-jobapplicationservice)
+  - [10.6 AdminService](#106-adminservice)
 - [11. Controller / REST API Specification](#11-controller--rest-api-specification)
 - [12. REST API Summary Table](#12-rest-api-summary-table)
 - [13. Security Design](#13-security-design)
@@ -591,11 +597,43 @@ com.mohiuddin.HireConnect.Model.Dto
 
 ## 10. Service Layer Design
 
-- **AuthService**: Handles registration, login authentication, JWT token generation, password encryption & changes.
-- **UserService**: Fetches/updates user profiles, manages account status.
-- **CompanyService**: Handles company registration, updates, ownership validation, and public company directory.
-- **JobService**: Handles job lifecycle (create, update, close), search and multi-criteria filtering.
-- **JobApplicationService**: Handles application submission, duplicate checks, seeker history, employer applicant review, status progression.
+### 10.1 AuthService
+- `AuthResponseDto register(RegisterRequestDto request)` — Public. Registers `JOB_SEEKER` or `EMPLOYER`, hashes password with BCrypt, and returns JWT with user profile.
+- `AuthResponseDto login(LoginRequestDto request)` — Public. Validates credentials, verifies account is enabled, and returns JWT with user profile.
+- `void changePassword(String currentUserEmail, ChangePasswordRequestDto request)` — Authenticated. Verifies current password and updates with new encoded password.
+
+### 10.2 UserService
+- `UserResponseDto getCurrentUserProfile(String currentUserEmail)` — Authenticated. Retrieves logged-in user profile.
+- `UserResponseDto updateUserProfile(String currentUserEmail, UserUpdateRequestDto request)` — Authenticated. Updates logged-in user profile details (name, phone, location, bio, resume URL).
+- `UserResponseDto getUserById(Long id)` — Authenticated. Retrieves public profile of a user by ID.
+
+### 10.3 CompanyService
+- `CompanyResponseDto createCompany(String employerEmail, CompanyRequestDto request)` — Role: `EMPLOYER`. Creates company profile linked to the authenticated employer.
+- `CompanyResponseDto getCompanyById(Long id)` — Public. Retrieves company profile details and total jobs count by ID.
+- `CompanyResponseDto getMyCompany(String employerEmail)` — Role: `EMPLOYER`. Retrieves company profile owned by the authenticated employer.
+- `CompanyResponseDto updateCompany(Long id, String employerEmail, CompanyRequestDto request)` — Role: `EMPLOYER` (Owner). Updates company profile details.
+- `PageResponseDto<CompanyResponseDto> getAllCompanies(Pageable pageable)` — Public. Retrieves paginated list of companies.
+
+### 10.4 JobService
+- `JobResponseDto createJob(String employerEmail, JobCreateRequestDto request)` — Role: `EMPLOYER`. Validates employer's company and posts a new job listing.
+- `JobResponseDto getJobById(Long id)` — Public. Retrieves full job details and total applicant count.
+- `PageResponseDto<JobResponseDto> getAllActiveJobs(String keyword, String location, String category, EmploymentType employmentType, ExperienceLevel experienceLevel, WorkArrangement workArrangement, BigDecimal salaryMin, BigDecimal salaryMax, Pageable pageable)` — Public. Searches and filters active job listings with pagination.
+- `PageResponseDto<JobResponseDto> getMyJobs(String employerEmail, Pageable pageable)` — Role: `EMPLOYER`. Retrieves paginated list of jobs posted by the authenticated employer.
+- `JobResponseDto updateJob(Long id, String employerEmail, JobUpdateRequestDto request)` — Role: `EMPLOYER` (Owner). Updates job posting details.
+- `JobResponseDto updateJobStatus(Long id, String employerEmail, JobStatusUpdateDto request)` — Role: `EMPLOYER` (Owner). Updates job status (`ACTIVE`, `CLOSED`, `DRAFT`).
+- `void deleteJob(Long id, String userEmail, boolean isAdmin)` — Role: `EMPLOYER` (Owner) or `ADMIN`. Deletes/archives a job posting.
+
+### 10.5 JobApplicationService
+- `JobApplicationResponseDto applyForJob(String seekerEmail, JobApplicationRequestDto request)` — Role: `JOB_SEEKER`. Submits application for an active job with duplicate check.
+- `PageResponseDto<JobApplicationResponseDto> getMyApplications(String seekerEmail, Pageable pageable)` — Role: `JOB_SEEKER`. Retrieves candidate's submitted job applications.
+- `JobApplicationResponseDto getApplicationById(Long id, String currentUserEmail)` — Role: Applicant, Job Owner, or `ADMIN`. Retrieves application details.
+- `PageResponseDto<JobApplicationResponseDto> getApplicationsForJob(Long jobId, String employerEmail, Pageable pageable)` — Role: `EMPLOYER` (Job Owner). Retrieves all candidates for a specific job.
+- `JobApplicationResponseDto updateApplicationStatus(Long id, String employerEmail, ApplicationStatusUpdateDto request)` — Role: `EMPLOYER` (Job Owner). Updates candidate status in hiring pipeline.
+
+### 10.6 AdminService
+- `PageResponseDto<UserResponseDto> getAllUsers(Pageable pageable)` — Role: `ADMIN`. Retrieves paginated user directory.
+- `UserResponseDto updateUserStatus(Long userId, UserStatusUpdateDto request)` — Role: `ADMIN`. Enables or disables a user account.
+- `Map<String, Object> getPlatformStats()` — Role: `ADMIN`. Retrieves aggregated platform counts (users, jobs, applications, companies).
 
 ---
 
@@ -817,7 +855,7 @@ graph TD
 - [x] Create domain enums (`Role`, `JobStatus`, `EmploymentType`, `ExperienceLevel`, `WorkArrangement`, `ApplicationStatus`)
 - [x] Configure Entity models (`User`, `Company`, `Job`, `JobApplication`) with correct column mappings and timestamps
 - [x] Configure DTO models (`RegisterRequestDto`, `LoginRequestDto`, `UserResponseDto`, etc.) with validation constraints
-- [ ] Implement Spring Data JPA repositories with custom query methods
+- [x] Implement Spring Data JPA repositories with custom query methods
 - [ ] Configure `SecurityFilterChain`, `JwtTokenProvider`, and password encoding
 - [ ] Implement service layer business logic and validation checks
 - [ ] Implement REST controllers and Swagger/OpenAPI documentation
