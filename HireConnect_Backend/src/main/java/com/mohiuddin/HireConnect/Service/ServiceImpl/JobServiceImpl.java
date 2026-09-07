@@ -352,23 +352,251 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PageResponseDto<JobResponseDto> getMYJobs(String employerEmail, Pageable pageable) {
-        throw new UnsupportedOperationException("Method not implemented yet");
+        if (employerEmail == null || employerEmail.trim().isEmpty()) {
+            log.error("Job retrieval failed: employer email is null or empty");
+            throw new BadRequestException("Employer email must not be null or empty");
+        }
+        if (pageable == null) {
+            log.error("Job retrievaled failed: pageable is null");
+            throw new BadRequestException("Pageable must not be null");
+        }
+        User employer = userRepository.findByEmail(employerEmail).orElseThrow(() -> {
+            log.error("Job retrieval failed: employer with the email {} not found", employerEmail);
+            return new ResourceNotFoundException("Employer not found with email: " + employerEmail);
+        });
+        if (employer.getRole() != Role.EMPLOYER) {
+            log.error("Job retrieval failed: user with email {} is not an employer", employerEmail);
+            throw new BadRequestException("Only users with role EMPLOYER can retrieve their jobs");
+        }
+        Page<Job> jobs = jobRepository.findByCreatedById(employer.getId(), pageable);
+        List<JobResponseDto> jobResponseDtos = jobs.getContent().stream()
+                .map(job -> {
+                    Long count = jobApplicationRepository.countByJobId(job.getId());
+                    return mapToJobResponseDto(job, count != null ? count : 0L);
+                })
+                .toList();
+        return new PageResponseDto<>(
+                jobResponseDtos,
+                jobs.getNumber(),
+                jobs.getSize(),
+                jobs.getTotalElements(),
+                jobs.getTotalPages(),
+                jobs.isLast()
+        );
     }
 
+    @Transactional
     @Override
     public JobResponseDto updateJob(long id, String employerEmail, JobUpdateRequestDto request) {
-        throw new UnsupportedOperationException("Method not implemented yet");
+        if (id <= 0) {
+            log.error("Job update failed: invalid job id {}", id);
+            throw new BadRequestException("Job ID must be a positive number");
+        }
+        if (employerEmail == null || employerEmail.trim().isEmpty()) {
+            log.error("Job update failed: employer email is null or empty");
+            throw new BadRequestException("Employer email must not be null or empty");
+        }
+        if (request == null) {
+            log.error("Job update failed: request data is null");
+            throw new BadRequestException("Job data must not be null");
+        }
+        if (request.getTitle() == null || request.getTitle().trim().length() < 2 || request.getTitle().trim().length() > 150) {
+            log.error("Job update failed: job title is null, empty or invalid length");
+            throw new BadRequestException("Job title must be between 2 and 150 characters");
+        }
+        if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
+            log.error("Job update failed: job description is null or empty");
+            throw new BadRequestException("Job description must not be null or empty");
+        }
+        if (request.getResponsibilities() == null || request.getResponsibilities().trim().isEmpty()) {
+            log.error("Job update failed: job responsibilities are null or empty");
+            throw new BadRequestException("Job responsibilities must not be null or empty");
+        }
+        if (request.getRequirements() == null || request.getRequirements().trim().isEmpty()) {
+            log.error("Job update failed: job requirements are null or empty");
+            throw new BadRequestException("Job requirements must not be null or empty");
+        }
+        if (request.getSalaryMin() != null && request.getSalaryMin().compareTo(BigDecimal.ZERO) < 0) {
+            log.error("Job update failed: minimum salary is less than 0");
+            throw new BadRequestException("Minimum salary must be greater than or equal to 0");
+        }
+        if (request.getSalaryMax() != null && request.getSalaryMax().compareTo(BigDecimal.ZERO) < 0) {
+            log.error("Job update failed: maximum salary is less than 0");
+            throw new BadRequestException("Maximum salary must be greater than or equal to 0");
+        }
+        if (request.getSalaryMin() != null && request.getSalaryMax() != null
+                && request.getSalaryMin().compareTo(request.getSalaryMax()) > 0) {
+            log.error("Job update failed: minimum salary exceeds maximum salary");
+            throw new BadRequestException("Minimum salary cannot be greater than maximum salary");
+        }
+        if (request.getCurrency() != null && request.getCurrency().trim().length() != 3) {
+            log.error("Job update failed: currency is not a 3-letter ISO code");
+            throw new BadRequestException("Currency must be a 3-letter ISO code (e.g. USD)");
+        }
+        if (request.getLocation() == null || request.getLocation().trim().isEmpty() || request.getLocation().trim().length() > 150) {
+            log.error("Job update failed: job location is null, empty or exceeds 150 characters");
+            throw new BadRequestException("Job location is required and must not exceed 150 characters");
+        }
+        if (request.getCategory() == null || request.getCategory().trim().isEmpty() || request.getCategory().trim().length() > 100) {
+            log.error("Job update failed: job category is null, empty or exceeds 100 characters");
+            throw new BadRequestException("Job category is required and must not exceed 100 characters");
+        }
+        if (request.getEmploymentType() == null) {
+            log.error("Job update failed: employment type is null");
+            throw new BadRequestException("Employment type is required");
+        }
+        if (request.getExperienceLevel() == null) {
+            log.error("Job update failed: experience level is null");
+            throw new BadRequestException("Experience level is required");
+        }
+        if (request.getWorkArrangement() == null) {
+            log.error("Job update failed: work arrangement is null");
+            throw new BadRequestException("Work arrangement is required");
+        }
+        if (request.getApplicationDeadline() != null && request.getApplicationDeadline().isBefore(LocalDate.now())) {
+            log.error("Job update failed: application deadline is not a future date");
+            throw new BadRequestException("Application deadline must be a future date");
+        }
+
+        User employer = userRepository.findByEmail(employerEmail).orElseThrow(() -> {
+            log.error("Job update failed: employer with email {} not found", employerEmail);
+            return new ResourceNotFoundException("Employer not found with email: " + employerEmail);
+        });
+
+        if (employer.getRole() != Role.EMPLOYER) {
+            log.error("Job update failed: user with email {} is not an employer", employerEmail);
+            throw new BadRequestException("Only users with role EMPLOYER can update jobs");
+        }
+
+        Job job = jobRepository.findById(id).orElseThrow(() -> {
+            log.error("Job update failed: job with id {} not found", id);
+            return new ResourceNotFoundException("Job not found with id: " + id);
+        });
+
+        if (!isOwner(job, employer)) {
+            log.error("Job update failed: employer {} is not authorized to update job with id {}", employerEmail, id);
+            throw new BadRequestException("You are not authorized to update this job");
+        }
+
+        log.info("Updating job with id {} for employer {}", id, employerEmail);
+
+        job.setTitle(request.getTitle().trim());
+        job.setDescription(request.getDescription().trim());
+        job.setResponsibilities(request.getResponsibilities().trim());
+        job.setRequirements(request.getRequirements().trim());
+        job.setSalaryMin(request.getSalaryMin());
+        job.setSalaryMax(request.getSalaryMax());
+        job.setCurrency(request.getCurrency() != null ? request.getCurrency().trim().toUpperCase() : null);
+        job.setLocation(request.getLocation().trim());
+        job.setCategory(request.getCategory().trim());
+        job.setEmploymentType(request.getEmploymentType());
+        job.setExperienceLevel(request.getExperienceLevel());
+        job.setWorkArrangement(request.getWorkArrangement());
+        job.setApplicationDeadline(request.getApplicationDeadline());
+        if (request.getStatus() != null) {
+            job.setStatus(request.getStatus());
+        }
+
+        Job updatedJob = jobRepository.save(job);
+        log.info("Job with id {} updated successfully", updatedJob.getId());
+
+        Long count = jobApplicationRepository.countByJobId(updatedJob.getId());
+        return mapToJobResponseDto(updatedJob, count != null ? count : 0L);
     }
 
+    @Transactional
     @Override
     public JobResponseDto updateJobStatus(long id, String employerEmail, JobStatusUpdateDto request) {
-        throw new UnsupportedOperationException("Method not implemented yet");
+        if (id <= 0) {
+            log.error("Job status update failed: invalid job id {}", id);
+            throw new BadRequestException("Job ID must be a positive number");
+        }
+        if (employerEmail == null || employerEmail.trim().isEmpty()) {
+            log.error("Job status update failed: employer email is null or empty");
+            throw new BadRequestException("Employer email must not be null or empty");
+        }
+        if (request == null || request.getStatus() == null) {
+            log.error("Job status update failed: request or status is null");
+            throw new BadRequestException("Job status must not be null");
+        }
+
+        User employer = userRepository.findByEmail(employerEmail).orElseThrow(() -> {
+            log.error("Job status update failed: employer with email {} not found", employerEmail);
+            return new ResourceNotFoundException("Employer not found with email: " + employerEmail);
+        });
+
+        if (employer.getRole() != Role.EMPLOYER) {
+            log.error("Job status update failed: user with email {} is not an employer", employerEmail);
+            throw new BadRequestException("Only users with role EMPLOYER can update job status");
+        }
+
+        Job job = jobRepository.findById(id).orElseThrow(() -> {
+            log.error("Job status update failed: job with id {} not found", id);
+            return new ResourceNotFoundException("Job not found with id: " + id);
+        });
+
+        if (!isOwner(job, employer)) {
+            log.error("Job status update failed: employer with emaial {} is not authorized to update job with id {}", employerEmail, id);
+            throw new BadRequestException("You are not authorized to update this job");
+        }
+
+        log.info("Updating status of job with id {} to {} by employer {}", id, request.getStatus(), employerEmail);
+
+        job.setStatus(request.getStatus());
+        Job updatedJob = jobRepository.save(job);
+        log.info("Job with the id {} status updated successfully to {}", updatedJob.getId(), updatedJob.getStatus());
+
+        Long count = jobApplicationRepository.countByJobId(updatedJob.getId());
+        return mapToJobResponseDto(updatedJob, count != null ? count : 0L);
     }
 
+    @Transactional
     @Override
     public void deleteJob(long id, String userEmail, boolean isAdmin) {
-        throw new UnsupportedOperationException("Method not implemented yet");
+        if (id <= 0) {
+            log.error("Job deletion failed: invalid job id {}", id);
+            throw new BadRequestException("Job ID must be a positive number");
+        }
+        if (userEmail == null || userEmail.trim().isEmpty()) {
+            log.error("Job deletion failed: user email is null or empty");
+            throw new BadRequestException("User email must not be null or empty");
+        }
+
+        User user = userRepository.findByEmail(userEmail).orElseThrow(() -> {
+            log.error("Job deletion failed: user with email {} not found", userEmail);
+            return new ResourceNotFoundException("User not found with email: " + userEmail);
+        });
+
+        Job job = jobRepository.findById(id).orElseThrow(() -> {
+            log.error("Job deletion failed: job with id {} not found", id);
+            return new ResourceNotFoundException("Job not found with id: " + id);
+        });
+
+        if (!isAdmin && user.getRole() != Role.ADMIN) {
+            if (user.getRole() != Role.EMPLOYER) {
+                log.error("Job deletion failed: user with email {} is not an employer or admin", userEmail);
+                throw new BadRequestException("Only employers or admins can delete jobs");
+            }
+
+            if (!isOwner(job, user)) {
+                log.error("Job deletion failed: employer {} is not authorized to delete job with id {}", userEmail, id);
+                throw new BadRequestException("You are not authorized to delete this job");
+            }
+        }
+
+        log.info("Deleting job with id {} by user {}", id, userEmail);
+        jobRepository.delete(job);
+        log.info("Job with id {} deleted successfully", id);
+    }
+
+    private boolean isOwner(Job job, User user) {
+        if (job == null || user == null) {
+            return false;
+        }
+        return (job.getCreatedBy() != null && job.getCreatedBy().getId().equals(user.getId()))
+                || (job.getCompany() != null && job.getCompany().getEmployer() != null && job.getCompany().getEmployer().getId().equals(user.getId()));
     }
 
     private JobResponseDto mapToJobResponseDto(Job savedJob, long applicationsCount) {
