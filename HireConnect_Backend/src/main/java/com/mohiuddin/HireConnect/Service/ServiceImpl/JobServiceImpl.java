@@ -359,7 +359,7 @@ public class JobServiceImpl implements JobService {
             throw new BadRequestException("Employer email must not be null or empty");
         }
         if (pageable == null) {
-            log.error("Job retrievaled failed: pageable is null");
+            log.error("Job retrieval failed: pageable is null");
             throw new BadRequestException("Pageable must not be null");
         }
         User employer = userRepository.findByEmail(employerEmail).orElseThrow(() -> {
