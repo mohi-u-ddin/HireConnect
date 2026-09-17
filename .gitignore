@@ -58,6 +58,9 @@ replay_pid*
 *.env
 *.env.*
 *.local
+**/.env
+**/.env.*
+**/.env.local
 !*.example
 !*.sample
 !.env.example
