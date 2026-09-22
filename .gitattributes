@@ -1,3 +1,3 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
-HireConnect_Frontend/** linguist-generated=true
+HireConnect_Frontend/** linguist-detectable=false
