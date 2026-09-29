@@ -2,6 +2,9 @@ package com.mohiuddin.HireConnect;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,6 +17,11 @@ public class HireConnectApplication {
 	public static void main(String[] args) {
 		loadDotenvIfPresent();
 		SpringApplication.run(HireConnectApplication.class, args);
+	}
+
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
 	}
 	public static void loadDotenvIfPresent() {
 		try {
