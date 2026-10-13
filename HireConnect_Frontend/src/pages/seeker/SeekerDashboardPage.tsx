@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Bookmark, CalendarCheck, Eye, ArrowRight } from 'lucide-react';
+import { FileText, Bookmark, CalendarCheck, Star, ArrowRight } from 'lucide-react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { StatCard } from '../../components/ui/StatCard';
 import { StatCardSkeleton } from '../../components/ui/Skeleton';
@@ -9,28 +9,48 @@ import { StatusBadge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { useAuth } from '../../context/AuthContext';
 import { applicationService } from '../../services/applicationService';
-import { seekerDashboardStats, seekerApplicationStatusSummary } from '../../data/mock/dashboard';
+import { userService } from '../../services/userService';
 import { formatDate } from '../../utils/format';
-import type { JobApplication } from '../../types';
+import type { ApplicationStatus, JobApplication } from '../../types';
 
-const statusOrder: Array<keyof typeof seekerApplicationStatusSummary> = ['APPLIED', 'SHORTLISTED', 'INTERVIEW', 'REJECTED'];
+const statusOrder: ApplicationStatus[] = ['APPLIED', 'SHORTLISTED', 'INTERVIEW', 'REJECTED'];
 
 export function SeekerDashboardPage() {
   const { currentUser } = useAuth();
   const [applications, setApplications] = useState<JobApplication[]>([]);
+  const [savedJobsCount, setSavedJobsCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!currentUser) return;
-    applicationService.getMyApplications(currentUser.id).then((data) => {
-      setApplications(data);
-      setIsLoading(false);
-    });
+    setIsLoading(true);
+    Promise.all([
+      applicationService.getMyApplications(currentUser.id),
+      userService.getSavedJobIds(currentUser.id),
+    ])
+      .then(([data, savedIds]) => {
+        setApplications(data);
+        setSavedJobsCount(savedIds.length);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
   }, [currentUser]);
 
   const firstName = currentUser?.fullName.split(' ')[0] ?? 'there';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+
+  const statusCounts: Record<ApplicationStatus, number> = {
+    APPLIED: applications.filter((a) => a.status === 'APPLIED').length,
+    SHORTLISTED: applications.filter((a) => a.status === 'SHORTLISTED').length,
+    INTERVIEW: applications.filter((a) => a.status === 'INTERVIEW').length,
+    ACCEPTED: applications.filter((a) => a.status === 'ACCEPTED').length,
+    REJECTED: applications.filter((a) => a.status === 'REJECTED').length,
+  };
+
+  const maxStatusCount = Math.max(...statusOrder.map((s) => statusCounts[s]), 1);
 
   return (
     <DashboardLayout title="Dashboard">
@@ -44,10 +64,10 @@ export function SeekerDashboardPage() {
           Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
         ) : (
           <>
-            <StatCard label="Applications" value={seekerDashboardStats.applications} icon={FileText} accent="primary" />
-            <StatCard label="Saved Jobs" value={seekerDashboardStats.savedJobs} icon={Bookmark} accent="secondary" />
-            <StatCard label="Interviews" value={seekerDashboardStats.interviews} icon={CalendarCheck} accent="warning" />
-            <StatCard label="Profile Views" value={seekerDashboardStats.profileViews} icon={Eye} accent="success" />
+            <StatCard label="Applications" value={applications.length} icon={FileText} accent="primary" />
+            <StatCard label="Saved Jobs" value={savedJobsCount} icon={Bookmark} accent="secondary" />
+            <StatCard label="Shortlisted" value={statusCounts.SHORTLISTED} icon={Star} accent="warning" />
+            <StatCard label="Interviews" value={statusCounts.INTERVIEW} icon={CalendarCheck} accent="success" />
           </>
         )}
       </div>
@@ -57,8 +77,7 @@ export function SeekerDashboardPage() {
           <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Application Status</h2>
           <div className="space-y-4">
             {statusOrder.map((status) => {
-              const value = seekerApplicationStatusSummary[status];
-              const max = Math.max(...Object.values(seekerApplicationStatusSummary));
+              const value = statusCounts[status];
               return (
                 <div key={status}>
                   <div className="flex items-center justify-between text-sm mb-1.5">
@@ -68,7 +87,7 @@ export function SeekerDashboardPage() {
                   <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${(value / max) * 100}%` }}
+                      style={{ width: `${(value / maxStatusCount) * 100}%` }}
                     />
                   </div>
                 </div>

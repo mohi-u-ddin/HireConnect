@@ -12,20 +12,23 @@
 //   VITE_API_BASE_URL=http://localhost:8080/api
 // ---------------------------------------------------------------------------
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
+const envApiBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
+export const API_BASE_URL = envApiBase ? envApiBase.replace(/\/+$/, '') : '';
 
-/** Simulated network latency so loading states are visible in the mock UI. */
-export function simulateLatency(min = 250, max = 600): Promise<void> {
+/** Simulated network latency for mock fallback so UI feedback remains smooth. */
+export function simulateLatency(min = 100, max = 300): Promise<void> {
   const delay = Math.floor(Math.random() * (max - min)) + min;
   return new Promise((resolve) => setTimeout(resolve, delay));
 }
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status = 400) {
+  data?: unknown;
+  constructor(message: string, status = 400, data?: unknown) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.data = data;
   }
 }
 
@@ -35,7 +38,8 @@ function getAuthToken(): string | null {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const response = await fetch(`${API_BASE_URL}${normalizedPath}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -46,7 +50,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new ApiError(body.message ?? 'Request failed', response.status);
+    let message = body.message || body.error;
+    if (!message && body.validationErrors && typeof body.validationErrors === 'object') {
+      message = Object.values(body.validationErrors).join(', ');
+    }
+    throw new ApiError(message ?? `Request failed with status ${response.status}`, response.status, body);
+  }
+
+  // Handle empty bodies (e.g. 204 No Content)
+  if (response.status === 204) {
+    return {} as T;
   }
 
   return response.json() as Promise<T>;

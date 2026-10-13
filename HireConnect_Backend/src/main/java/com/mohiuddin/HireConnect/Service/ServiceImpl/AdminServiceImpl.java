@@ -5,6 +5,7 @@ import com.mohiuddin.HireConnect.Exceptions.ResourceNotFoundException;
 import com.mohiuddin.HireConnect.Model.Dto.UserResponseDto;
 import com.mohiuddin.HireConnect.Model.Dto.UserStatusUpdateDto;
 import com.mohiuddin.HireConnect.Model.Entities.User;
+import com.mohiuddin.HireConnect.Model.Enums.Role;
 import com.mohiuddin.HireConnect.Model.EnvelopeDto.PageResponseDto;
 import com.mohiuddin.HireConnect.Repository.CompanyRepository;
 import com.mohiuddin.HireConnect.Repository.JobApplicationRepository;
@@ -87,6 +88,8 @@ public class AdminServiceImpl implements AdminService {
         stats.put("totalCompanies", companyRepository.count());
         stats.put("totalJobs", jobRepository.count());
         stats.put("totalApplications", jobApplicationRepository.count());
+        stats.put("totalJobSeekers", userRepository.countByRole(Role.JOB_SEEKER));
+        stats.put("totalEmployers", userRepository.countByRole(Role.EMPLOYER));
 
         log.info("Fetched platform statistics: {}", stats);
         return stats;

@@ -11,7 +11,6 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { useAuth } from '../../context/AuthContext';
 import { jobService } from '../../services/jobService';
 import { applicationService } from '../../services/applicationService';
-import { employerDashboardStats } from '../../data/mock/dashboard';
 import { formatDate } from '../../utils/format';
 import type { Job, JobApplication } from '../../types';
 
@@ -23,14 +22,25 @@ export function EmployerDashboardPage() {
 
   useEffect(() => {
     if (!currentUser) return;
-    jobService.getJobsByEmployer(currentUser.id).then((jobsData) => {
-      setJobs(jobsData);
-      applicationService.getApplicationsForEmployer(jobsData.map((j) => j.id)).then((apps) => {
+    setIsLoading(true);
+    jobService
+      .getJobsByEmployer(currentUser.id)
+      .then((jobsData) => {
+        setJobs(jobsData);
+        return applicationService.getApplicationsForEmployer(jobsData.map((j) => j.id));
+      })
+      .then((apps) => {
         setApplications(apps);
         setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
       });
-    });
   }, [currentUser]);
+
+  const activeJobsCount = jobs.filter((j) => j.status === 'ACTIVE').length;
+  const shortlistedCount = applications.filter((a) => a.status === 'SHORTLISTED').length;
+  const interviewsCount = applications.filter((a) => a.status === 'INTERVIEW').length;
 
   return (
     <DashboardLayout title="Dashboard">
@@ -51,10 +61,10 @@ export function EmployerDashboardPage() {
           Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
         ) : (
           <>
-            <StatCard label="Active Jobs" value={jobs.filter((j) => j.status === 'ACTIVE').length || employerDashboardStats.activeJobs} icon={Briefcase} accent="primary" />
-            <StatCard label="Total Applications" value={applications.length || employerDashboardStats.totalApplications} icon={ClipboardList} accent="secondary" />
-            <StatCard label="Shortlisted" value={applications.filter((a) => a.status === 'SHORTLISTED').length || employerDashboardStats.shortlisted} icon={Star} accent="warning" />
-            <StatCard label="Interviews" value={applications.filter((a) => a.status === 'INTERVIEW').length || employerDashboardStats.interviews} icon={CalendarCheck} accent="success" />
+            <StatCard label="Active Jobs" value={activeJobsCount} icon={Briefcase} accent="primary" />
+            <StatCard label="Total Applications" value={applications.length} icon={ClipboardList} accent="secondary" />
+            <StatCard label="Shortlisted" value={shortlistedCount} icon={Star} accent="warning" />
+            <StatCard label="Interviews" value={interviewsCount} icon={CalendarCheck} accent="success" />
           </>
         )}
       </div>

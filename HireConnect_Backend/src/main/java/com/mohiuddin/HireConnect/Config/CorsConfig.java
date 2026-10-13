@@ -24,10 +24,10 @@ public class CorsConfig {
                                 .map(String::trim)
                                 .filter(s -> !s.isEmpty())
                                 .toArray(String[]::new)
-                        : new String[]{"http://localhost:5173", "http://localhost:3000"};
+                        : new String[0];
 
                 if (origins.length == 0) {
-                    origins = new String[]{"http://localhost:5173", "http://localhost:3000"};
+                    return;
                 }
 
                 boolean hasWildcard = Arrays.stream(origins).anyMatch("*"::equals);

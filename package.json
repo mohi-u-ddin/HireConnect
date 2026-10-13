@@ -1,0 +1,10 @@
+{
+  "name": "hireconnect-workspace",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix HireConnect_Frontend run dev",
+    "build": "npm --prefix HireConnect_Frontend run build",
+    "lint": "npm --prefix HireConnect_Frontend run lint",
+    "frontend": "npm --prefix HireConnect_Frontend run dev"
+  }
+}
