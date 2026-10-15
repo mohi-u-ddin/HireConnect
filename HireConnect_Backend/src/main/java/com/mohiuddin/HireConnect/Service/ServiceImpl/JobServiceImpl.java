@@ -628,4 +628,15 @@ public class JobServiceImpl implements JobService {
                 .updatedAt(savedJob.getUpdatedAt())
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    @Override
+    public java.util.Map<String, Object> getPublicPlatformStats() {
+        java.util.Map<String, Object> stats = new java.util.LinkedHashMap<>();
+        stats.put("totalJobs", jobRepository.count());
+        stats.put("totalCompanies", companyRepository.count());
+        stats.put("totalJobSeekers", userRepository.countByRole(Role.JOB_SEEKER));
+        stats.put("totalApplications", jobApplicationRepository.count());
+        return stats;
+    }
 }

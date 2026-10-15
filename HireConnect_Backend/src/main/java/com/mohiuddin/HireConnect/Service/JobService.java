@@ -26,5 +26,6 @@ public interface JobService {
     JobResponseDto updateJob(long id,String employerEmail, JobUpdateRequestDto request);
     JobResponseDto updateJobStatus(long id, String employerEmail, JobStatusUpdateDto request);
     void deleteJob(long id, String userEmail, boolean isAdmin);
+    java.util.Map<String, Object> getPublicPlatformStats();
 
 }

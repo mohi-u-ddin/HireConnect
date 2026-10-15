@@ -52,6 +52,11 @@ public class JobController {
                 keyword, location, category, resolvedEmploymentType, experienceLevel, workArrangement, minSalary, maxSalary, pageable));
     }
 
+    @GetMapping("/platform-stats")
+    public ResponseEntity<java.util.Map<String, Object>> getPlatformStats() {
+        return ResponseEntity.ok(jobService.getPublicPlatformStats());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<JobResponseDto> getJobById(@PathVariable long id) {
         JobResponseDto jobResponseDto = jobService.getJobById(id);

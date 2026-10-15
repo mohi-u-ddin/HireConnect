@@ -282,4 +282,34 @@ export const jobService = {
     await simulateLatency();
     return [...fallbackJobs];
   },
+
+  async getPublicPlatformStats(): Promise<{
+    totalJobs: number;
+    totalCompanies: number;
+    totalJobSeekers: number;
+    totalApplications: number;
+  }> {
+    // 1. Try real backend
+    try {
+      const res = await apiClient.get<Record<string, any>>('/jobs/platform-stats');
+      if (res) {
+        return {
+          totalJobs: Number(res.totalJobs ?? 0),
+          totalCompanies: Number(res.totalCompanies ?? 0),
+          totalJobSeekers: Number(res.totalJobSeekers ?? 0),
+          totalApplications: Number(res.totalApplications ?? 0),
+        };
+      }
+    } catch (err) {
+      console.warn('[jobService.getPublicPlatformStats] Backend request failed, falling back:', err);
+    }
+
+    // 2. Fallback (counts from mock fallback)
+    return {
+      totalJobs: fallbackJobs.filter((j) => j.status === 'ACTIVE').length,
+      totalCompanies: 0,
+      totalJobSeekers: 0,
+      totalApplications: 0,
+    };
+  },
 };

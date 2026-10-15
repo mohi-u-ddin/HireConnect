@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Target, Users, Sparkles } from 'lucide-react';
 import { PublicLayout } from '../../components/layout/PublicLayout';
-import { platformStats } from '../../data/mock/dashboard';
+import { jobService } from '../../services/jobService';
 
 const values = [
   { icon: Target, title: 'Focused', description: 'We help you find roles that actually match your skills and goals, without the noise.' },
@@ -9,6 +10,17 @@ const values = [
 ];
 
 export function AboutPage() {
+  const [stats, setStats] = useState({
+    totalJobs: 0,
+    totalCompanies: 0,
+    totalJobSeekers: 0,
+    totalApplications: 0,
+  });
+
+  useEffect(() => {
+    jobService.getPublicPlatformStats().then(setStats);
+  }, []);
+
   return (
     <PublicLayout>
       <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-16">
@@ -37,10 +49,10 @@ export function AboutPage() {
 
         <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-8 text-center border-t border-slate-200 dark:border-slate-800 pt-12">
           {[
-            [platformStats.activeJobs, 'Active Jobs'],
-            [platformStats.companies, 'Companies'],
-            [platformStats.jobSeekers, 'Job Seekers'],
-            [platformStats.successfulHires, 'Successful Hires'],
+            [stats.totalJobs.toLocaleString(), 'Active Jobs'],
+            [stats.totalCompanies.toLocaleString(), 'Companies'],
+            [stats.totalJobSeekers.toLocaleString(), 'Job Seekers'],
+            [stats.totalApplications.toLocaleString(), 'Applications'],
           ].map(([value, label]) => (
             <div key={label}>
               <p className="text-2xl font-bold text-primary">{value}</p>

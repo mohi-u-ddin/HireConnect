@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, Info } from 'lucide-react';
 import { Logo } from '../../components/layout/Logo';
@@ -9,6 +9,7 @@ import { useToast } from '../../context/ToastContext';
 import { isValidEmail, errorMessages } from '../../utils/validation';
 import { DEMO_ACCOUNTS } from '../../data/mock/users';
 import { ApiError } from '../../services/apiClient';
+import { jobService } from '../../services/jobService';
 import type { Role } from '../../types';
 
 const dashboardPathByRole: Record<Role, string> = {
@@ -24,6 +25,11 @@ export function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [stats, setStats] = useState({ totalJobs: 0, totalCompanies: 0, totalJobSeekers: 0, totalApplications: 0 });
+
+  useEffect(() => {
+    jobService.getPublicPlatformStats().then(setStats);
+  }, []);
 
   const { login } = useAuth();
   const { showToast } = useToast();
@@ -166,10 +172,10 @@ export function LoginPage() {
           </p>
           <div className="mt-10 grid grid-cols-2 gap-4">
             {[
-              ['10K+', 'Active Jobs'],
-              ['4K+', 'Companies'],
-              ['25K+', 'Job Seekers'],
-              ['8K+', 'Successful Hires'],
+              [stats.totalJobs.toLocaleString(), 'Active Jobs'],
+              [stats.totalCompanies.toLocaleString(), 'Companies'],
+              [stats.totalJobSeekers.toLocaleString(), 'Job Seekers'],
+              [stats.totalApplications.toLocaleString(), 'Applications'],
             ].map(([value, label]) => (
               <div key={label} className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
                 <p className="text-2xl font-bold">{value}</p>

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Code2,
@@ -14,30 +15,23 @@ import {
 } from 'lucide-react';
 import { SearchBar } from '../../components/ui/SearchBar';
 import { popularSearches } from '../../data/mock/jobs';
-import { platformStats } from '../../data/mock/dashboard';
+import { jobService } from '../../services/jobService';
 
 const categories = [
-  { label: 'Software Development', icon: Code2, count: '3,240' },
-  { label: 'Design', icon: Palette, count: '890' },
-  { label: 'Marketing', icon: Megaphone, count: '1,120' },
-  { label: 'Finance', icon: LineChart, count: '640' },
-  { label: 'Sales', icon: Handshake, count: '980' },
-  { label: 'Data Science', icon: Database, count: '560' },
-  { label: 'DevOps', icon: Cloud, count: '410' },
-  { label: 'Customer Support', icon: Headphones, count: '720' },
+  { label: 'Software Development', icon: Code2 },
+  { label: 'Design', icon: Palette },
+  { label: 'Marketing', icon: Megaphone },
+  { label: 'Finance', icon: LineChart },
+  { label: 'Sales', icon: Handshake },
+  { label: 'Data Science', icon: Database },
+  { label: 'DevOps', icon: Cloud },
+  { label: 'Customer Support', icon: Headphones },
 ];
 
 const steps = [
   { number: '01', title: 'Discover', description: 'Find opportunities that match your skills.', icon: Compass },
   { number: '02', title: 'Apply', description: 'Submit your application easily.', icon: Send },
   { number: '03', title: 'Get Hired', description: 'Connect with companies and start your next chapter.', icon: Award },
-];
-
-const stats = [
-  { value: platformStats.activeJobs, label: 'Active Jobs' },
-  { value: platformStats.companies, label: 'Companies' },
-  { value: platformStats.jobSeekers, label: 'Job Seekers' },
-  { value: platformStats.successfulHires, label: 'Successful Hires' },
 ];
 
 export function Hero() {
@@ -56,7 +50,7 @@ export function Hero() {
       <div className="container-page relative py-16 sm:py-24">
         <div className="max-w-3xl">
           <span className="inline-flex items-center rounded-full bg-primary-light dark:bg-primary/15 text-primary-700 dark:text-primary-100 text-xs font-semibold px-3 py-1 mb-5">
-            Trusted by 4,000+ companies
+            Modern Recruitment Platform
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white leading-tight text-balance">
             Find your next opportunity.
@@ -110,7 +104,7 @@ export function CategoriesSection() {
             </span>
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">{cat.label}</p>
-              <p className="text-xs text-slate-400">{cat.count} jobs</p>
+              <p className="text-xs text-slate-400">Explore opportunities</p>
             </div>
           </Link>
         ))}
@@ -145,10 +139,28 @@ export function HowItWorksSection() {
 }
 
 export function StatsSection() {
+  const [stats, setStats] = useState({
+    totalJobs: 0,
+    totalCompanies: 0,
+    totalJobSeekers: 0,
+    totalApplications: 0,
+  });
+
+  useEffect(() => {
+    jobService.getPublicPlatformStats().then(setStats);
+  }, []);
+
+  const statItems = [
+    { value: stats.totalJobs.toLocaleString(), label: 'Active Jobs' },
+    { value: stats.totalCompanies.toLocaleString(), label: 'Companies' },
+    { value: stats.totalJobSeekers.toLocaleString(), label: 'Job Seekers' },
+    { value: stats.totalApplications.toLocaleString(), label: 'Applications' },
+  ];
+
   return (
     <section className="bg-primary-dark py-16">
       <div className="container-page grid grid-cols-2 sm:grid-cols-4 gap-8 text-center">
-        {stats.map((stat) => (
+        {statItems.map((stat) => (
           <div key={stat.label}>
             <p className="text-3xl sm:text-4xl font-extrabold text-white">{stat.value}</p>
             <p className="mt-1 text-sm text-indigo-200">{stat.label}</p>
